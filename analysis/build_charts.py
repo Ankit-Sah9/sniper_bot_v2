@@ -122,7 +122,7 @@ def main() -> int:
     ap.add_argument("--result", choices=["WIN", "LOSS", "FLAT"], default=None)
     ap.add_argument("--direction", choices=["LONG", "SHORT"], default=None)
     ap.add_argument("--max", type=int, default=60, help="max number of trades to include (default 60)")
-    ap.add_argument("--pre-days", type=int, default=3, help="days of context before entry")
+    ap.add_argument("--pre-days", type=int, default=7, help="days of context before entry")
     ap.add_argument("--post-days", type=int, default=2, help="days of context after exit")
     args = ap.parse_args()
 

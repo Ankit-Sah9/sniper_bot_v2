@@ -20,8 +20,12 @@ class StrategyConfig:
     entry_timeframe_minutes: int = 5          # primary timeframe
 
     # ── Trading window (New York time) ───────────────────────────────────
-    window_start: str = "08:30"               # entry window open (ET)
-    window_end: str = "11:00"                 # entry window close (ET)
+    window_start: str = "08:30"               # entry FILL window open (ET)
+    window_end: str = "11:00"                 # entry FILL window close (ET)
+    # MSS (setup-arm) time must fall in [mss_start, mss_end). Early pre-session
+    # setups (07:xx) were net losers across 2015-2025, so restrict to 08:00-11:00.
+    mss_start: str = "07:30"
+    mss_end: str = "11:00"
     # Sweep/MSS may occur before the window; the ENTRY FILL must be inside it.
 
     # ── Daily bias (directional filter) ──────────────────────────────────
@@ -80,13 +84,14 @@ class StrategyConfig:
     # Stop placement:
     #   "sweep"   = beyond the sweep extreme (original v1).
     #   "fvg"     = beyond the extreme of the 3 FVG candles.
-    #   "percent" = entry_price * stop_pct (pure proportion of price, scales
-    #               smoothly across all price levels; no floor).
+    #   "percent" = entry_price * stop_pct (pure proportion of price).
+    #   "atr"     = atr_mult * daily ATR (volatility-based; available, not active).
     stop_mode: str = "percent"
-    # percent mode: stop distance = entry_price * stop_pct.
-    # Anchored to $40 at 20,000 (40/20000 = 0.002) = 0.2% of price.
+    # percent mode: stop distance = entry_price * stop_pct (0.2% = $40 at 20,000).
     stop_pct: float = 0.002
     stop_floor: float = 0.0
+    # atr mode (inactive): stop distance = atr_mult * daily_ATR(atr_period days).
+    atr_mult: float = 0.20
     # Buffer = fixed stop_buffer  +  atr_stop_mult * ATR(atr_period) at the MSS.
     stop_buffer: float = 5.0                  # fixed $ component (sweep/fvg modes)
     atr_period: int = 14                      # candles for ATR

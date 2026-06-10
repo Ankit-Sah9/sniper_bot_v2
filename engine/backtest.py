@@ -226,6 +226,15 @@ def run_backtest(candles: list[Candle],
         from .htf_bias import FourHourBias
         four_h = FourHourBias(candles)
 
+    # Precompute daily ATR only if the ATR stop mode is active (keeps the
+    # dependency optional so non-ATR runs don't require it).
+    if CONFIG.stop_mode == "atr":
+        try:
+            from .strategy import set_daily_atr_lookup
+            set_daily_atr_lookup(candles)
+        except ImportError:
+            pass
+
     trades: list[Trade] = []
     traded_days: set[date] = set()
 
@@ -246,12 +255,13 @@ def run_backtest(candles: list[Candle],
             i += 1
             continue
 
-        # Cheap pre-filter: the MSS candle must precede an entry that fills by
-        # 11:00 ET, and the sweep is same-day. So only attempt confirmation for
-        # candles roughly in the 07:30-11:00 window. This avoids running the
-        # expensive fractal/FVG search on every overnight candle.
+        # MSS (setup-arm) time must fall within the configured MSS window.
+        # Early pre-session setups (07:xx) were net losers, so this restricts
+        # confirmation to mss_start..mss_end (default 08:00-11:00).
+        sh, sm = map(int, CONFIG.mss_start.split(":"))
+        eh, em = map(int, CONFIG.mss_end.split(":"))
         minute_of_day = c.time.hour * 60 + c.time.minute
-        if not (7 * 60 + 30 <= minute_of_day < 11 * 60):
+        if not (sh * 60 + sm <= minute_of_day < eh * 60 + em):
             i += 1
             continue
 
