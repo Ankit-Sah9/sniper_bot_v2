@@ -45,14 +45,49 @@ python analysis/analyze.py --trades data/backtest/trade_log.csv
 python analysis/build_dashboard.py
 ```
 
+## Multi-timeframe trade chart viewer
+
+A TradingView-style viewer that shows the bot's trades on candlestick charts,
+with **5m / 15m / 1h / 1D** timeframes you can switch between, and each trade
+marked up like a real chart annotation (entry line, green target zone, red stop
+zone, exit marker, swept-liquidity level, FVG band).
+
+It works by slicing a window of 5-min candles around each trade from
+`data/history/NQ_master.csv` and resampling that window up to the higher
+timeframes — so all four views come from your single 5-min dataset.
+
+```bash
+# 1. build the chart data (pick a subset so the file stays light)
+python analysis/build_charts.py --year 2024 --max 40
+#    other filters: --result WIN | LOSS | FLAT   --direction LONG | SHORT
+#    window size:   --pre-days 3 --post-days 2
+
+# 2. render the viewer
+python analysis/render_charts.py
+```
+
+Then open `analysis/output/chart_viewer.html`.
+
+Controls: timeframe buttons (5m/15m/1h/1D), Prev/Next (or ← → keys), mouse-wheel
+zoom, drag to pan, and a clickable trade list on the left. The top-left shows a
+live OHLC readout as you move the crosshair.
+
+> **Note on size:** each trade carries candle data for all four timeframes, so
+> keep `--max` modest (40–80 trades ≈ a few MB). Filtering by `--year` or
+> `--result` is the easy way to keep it focused and fast.
+
 ## Files
 
 | File | Role |
 |------|------|
 | `analyze.py` | Reads `trade_log.csv`, writes `output/analysis.json` (aggregates). |
 | `build_dashboard.py` | Reads `analysis.json`, writes self-contained `output/dashboard.html`. |
+| `build_charts.py` | Slices + resamples per-trade candle windows → `output/charts.json`. |
+| `render_charts.py` | Reads `charts.json`, writes `output/chart_viewer.html`. |
 | `output/analysis.json` | Machine-readable aggregates (regenerated each run). |
-| `output/dashboard.html` | The interactive report (regenerated each run). |
+| `output/dashboard.html` | The P&L analysis report (regenerated each run). |
+| `output/charts.json` | Per-trade multi-timeframe candle data. |
+| `output/chart_viewer.html` | The multi-timeframe trade chart viewer. |
 
 ## Notes
 
